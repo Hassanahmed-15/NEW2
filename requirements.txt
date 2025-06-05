@@ -10,5 +10,5 @@ Pillow
 scipy
 timm
 streamlit
-pydicom=2.30
+pydicom
 
