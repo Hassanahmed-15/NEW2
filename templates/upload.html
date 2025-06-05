@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECHO AI</title>
+    <!-- Include Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fab0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-size: cover;
+            background-image: url('static/index_bg.jpg');
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 100%;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+            font-size: 1.2em;
+            padding: 10px 20px;
+            border-radius: 30px;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .spinner-border {
+            display: none;
+            margin-top: 20px;
+        }
+        .status-message {
+            display: none;
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        .form-control {
+            padding: 10px;
+            font-size: 1.1em;
+        }
+        .card-body {
+            padding: 2rem;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .file-input-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .file-input-container input[type="file"] {
+            margin: 0 auto;
+        }
+        .logo {
+            display: block;
+            margin: 0 auto 20px;
+            max-width: 150px;
+        }
+    </style>
+</head>
+<body>
+<div class="card shadow">
+    <div class="card-body">
+        <img src="{{ url_for('static', filename='logo_2.png') }}" alt="Logo" class="logo" width="200">
+        <h1 class="text-center mb-4">Echo Clip Report</h1>
+        <h5 class="text-center mb-4">Upload AVI Video or DICOM Imagery</h5>
+
+        <form id="upload-form" action="/" method="post" enctype="multipart/form-data">
+            <div class="form-group file-input-container">
+                <label for="file" class="sr-only">Choose AVI video or DICOM file</label>
+                <input type="file" class="form-control" id="file" name="file" required>
+            </div>
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary btn-lg">Upload</button>
+            </div>
+        </form>
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Working...</span>
+            </div>
+            <div class="status-message">Processing...</div>
+        </div>
+    </div>
+</div>
+<!-- Include Bootstrap JS and dependencies -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    document.getElementById('upload-form').onsubmit = function() {
+        // Show the spinner and status message
+        document.querySelector('.spinner-border').style.display = 'inline-block';
+        document.querySelector('.status-message').style.display = 'block';
+
+        // Prevent default form submission for testing purposes
+        // return false; // Uncomment this line if you want to prevent actual form submission
+    };
+</script>
+</body>
+</html>

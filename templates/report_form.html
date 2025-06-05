@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Report</title>
+    <style>
+        h4 { font-family: Verdana; font-weight: bold; font-size: 10pt; }
+        .section { font-family: Verdana; font-weight: bold; font-size: 10pt; }
+        .pagebreak { page-break-inside: avoid; }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .download-button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+            background-color: #28a745;
+            border: none;
+            border-radius: 4px;
+        }
+        .download-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div align="center"><font size="5" color="#800000">Preliminary</font></div>
+    <div style="font-family:Arial;">
+        <div align="right"><font size="-1"><b>Study ID:</b> 440647</font></div>
+        <center><img src="{{ url_for('static', filename='logo_2.png') }}" alt="Logo" width="200"></center>
+        <br>
+        <center><font size="3"><b><u>TRANSTHORACIC ECHOCARDIOGRAM Report</u></b></font></center>
+        <br>
+        <table border="1" width="100%">
+            <tr>
+                <td>
+                    <table border="0" cellspacing="0">
+                        <tr>
+                            <td><font size="-1"><b>Patient Name:</b> {{ data.patient_name }}</font></td>
+                            <td width="80"></td>
+                            <td><font size="-1"><b>Study Date:</b> {{ data.study_date }}</font></td>
+                        </tr>
+                        <tr>
+                            <td><font size="-1"><b>Patient ID:</b> {{ data.patient_id }}</font></td>
+                        </tr>
+                        <tr>
+                            <td><font size="-1"><b>Birth Date:</b> {{ data.birth_date }}</font></td>
+                            <td width="80"></td>
+                            <td><font size="-1"><b>Gender:</b> {{ data.gender }}</font></td>
+                        </tr>
+                        <tr>
+                            <td><font size="-1"><b>Height:</b> {{ data.height }}</font></td>
+                            <td width="80"></td>
+                            <td><font size="-1"><b>Weight:</b> {{ data.weight }}</font></td>
+                        </tr>
+                        <tr>
+                            <td><font size="-1"><b>Ordering Physician:</b> {{ data.ordering_physician }}</font></td>
+                            <td width="80"></td>
+                            <td><font size="-1"><b>Performed By:</b> {{ data.performed_by }}</font></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3"><font size="-1"><b>Indication:</b> {{ data.indication }}</font></td>
+                        </tr>
+                        <tr>
+                            <td><font size="-1"><b>BSA:</b> {{ data.bsa }}</font></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <div class="section"><u>Summary</u></div>
+        {% for item in data.summary %}
+            <p>{{ item }}</p>
+        {% endfor %}
+        <div class="section"><u>Predictions</u></div>
+
+        <div class="section"><u>MitraClip</u></div>
+        <select name="mitraclip" onchange="saveSelection(this)">
+            {% for prompt in data.mitraclip %}
+                <option>{{ prompt }}</option>
+            {% endfor %}
+        </select>
+        
+        <div class="section"><u>Impella</u></div>
+        <select name="impella" onchange="saveSelection(this)">
+            {% for prompt in data.impella %}
+                <option>{{ prompt }}</option>
+            {% endfor %}
+        </select>
+        
+        <div class="section"><u>Severe Left Ventricle Dilation</u></div>
+        <select name="severe_lv_dilation" onchange="saveSelection(this)">
+            {% for prompt in data.severe_lv_dilation %}
+                <option>{{ prompt }}</option>
+            {% endfor %}
+        </select>
+        
+        <div class="section"><u>Moderate Left Ventricle Dilation</u></div>
+        <select name="moderate_lv_dilation" onchange="saveSelection(this)">
+            {% for prompt in data.moderate_lv_dilation %}
+                <option>{{ prompt }}</option>
+            {% endfor %}
+        </select>
+        
+        <div class="section"><u>Mild Left Ventricle Dilation</u></div>
+        <select name="mild_lv_dilation" onchange="saveSelection(this)">
+            {% for prompt in data.mild_lv_dilation %}
+                <option>{{ prompt }}</option>
+            {% endfor %}
+        </select>
+        
+        <div class="section"><u>Significantly Elevated Right Atrial Pressure</u></div>
+        <select name="sig_elev_ra_pressure" onchange="saveSelection(this)">
+            {% for prompt in data.sig_elev_ra_pressure %}
+                <option>{{ prompt }}</option>
+            {% endfor %}
+        </select>
+        
+        <div class="section"><u>Normal Right Atrial Pressure</u></div>
+        <select name="norm_r_atrial_pressure" onchange="saveSelection(this)">
+            {% for prompt in data.norm_r_atrial_pressure %}
+                <option>{{ prompt }}</option>
+            {% endfor %}
+        </select>
+        
+        <div class="section"><u>Detected Conditions</u></div>
+        <ul>
+            {% for condition in data.detected_conditions %}
+                <li>{{ condition.replace('_', ' ').title() }}</li>
+            {% endfor %}
+        </ul>
+        <div class="section"><u>Predicted Values</u></div>
+        <p>Predicted Value for ejection_fraction: {{ data.ejection_fraction.predicted_value }}</p>
+        <p>Closest Matching Prompt for ejection_fraction: {{ data.ejection_fraction.closest_prompt }}</p>
+        <p>Predicted Value for pulmonary_artery_pressure: {{ data.pulmonary_artery_pressure.predicted_value }}</p>
+        <p>Closest Matching Prompt for pulmonary_artery_pressure: {{ data.pulmonary_artery_pressure.closest_prompt }}</p>
+        <br>
+        <a href="{{ url_for('edit_report') }}" class="button">Edit Report</a>
+        <form method="post" action="{{ url_for('download_final_pdf') }}" style="display:inline;">
+            <button type="submit" class="download-button">Download PDF</button>
+        </form>
+    </div>
+    <script>
+        function saveSelection(selectElement) {
+            const key = selectElement.name;
+            const value = selectElement.value;
+            const formData = new FormData();
+            formData.append(key, value);
+
+            fetch("{{ url_for('save_dropdown') }}", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
