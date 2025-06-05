@@ -146,4 +146,3 @@ if st.session_state.get("report_ready", False):
 
     except Exception as e:
         st.error(f"Failed to load report: {e}")
-g
