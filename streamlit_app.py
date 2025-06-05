@@ -3,7 +3,7 @@ import streamlit as st
 import os
 import base64
 import json
-from echo_CLIP.flask_app.flask_app.static.bg.processing import process_dicom, process_video
+from processing import process_dicom, process_video
 
 # ─────────────────────────────────────────────────────────────
 # 1) Page configuration
@@ -146,3 +146,4 @@ if st.session_state.get("report_ready", False):
 
     except Exception as e:
         st.error(f"Failed to load report: {e}")
+g
