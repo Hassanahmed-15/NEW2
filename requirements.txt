@@ -1,0 +1,13 @@
+torch
+torchvision
+open_clip_torch
+huggingface_hub
+tokenizers
+opencv-python-headless
+numpy
+matplotlib
+Pillow
+scipy
+timm
+streamlit
+pydicom
