@@ -1,5 +1,5 @@
-torch
-torchvision
+torch==2.0.1
+torchvision==0.15.2
 open_clip_torch
 huggingface_hub
 tokenizers
@@ -9,6 +9,6 @@ matplotlib
 Pillow
 scipy
 timm
-streamlit
+streamlit==1.23.2
 pydicom
-
+nest_asyncio
