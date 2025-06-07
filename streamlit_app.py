@@ -1,26 +1,24 @@
-# streamlit_app.py
-import streamlit as st
 import os
+os.environ["STREAMLIT_SERVER_HEADLESS"] = "1"
+os.environ["STREAMLIT_SERVER_ENABLE_STATIC_FILE_WATCHER"] = "false"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import base64
 import json
+import streamlit as st
 from processing import process_dicom, process_video
-from streamlit.runtime.scriptrunner import add_script_run_ctx
 
-# Disable problematic watcher
-st.runtime.scriptrunner.has_script_run_ctx = lambda: True
-
-# ─────────────────────────────────────────────────────────────
-# 1) Page configuration
-# ──────────────────────────────────────────────────────────
+# =============================================================================
+# 1. PAGE CONFIGURATION
+# =============================================================================
 st.set_page_config(
     page_title="Echo Clip Report",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# ──────────────────────────────────────────────────────────
-# 2) Background image CSS
-# ──────────────────────────────────────────────────────────
+# =============================================================================
+# 2. BACKGROUND IMAGE
+# =============================================================================
 bg_path = os.path.join("templates", "hello.jpg")
 if os.path.exists(bg_path):
     with open(bg_path, "rb") as img_file:
@@ -57,11 +55,11 @@ if os.path.exists(bg_path):
     """
     st.markdown(page_bg_css, unsafe_allow_html=True)
 else:
-    st.warning("⚠️ Could not find `static/bg/index_bg.jpg`. Double-check the path.")
+    st.warning("⚠️ Could not find background image. Double-check the path.")
 
-# ──────────────────────────────────────────────────────────
-# 3) Upload Card
-# ──────────────────────────────────────────────────────────
+# =============================================================================
+# 3. UPLOAD SECTION
+# =============================================================================
 logo_path = "static/logo_1.png"
 if os.path.exists(logo_path):
     with open(logo_path, "rb") as f:
@@ -78,13 +76,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# (rest of code continues unchanged)
-
-# (rest of code continues unchanged)
-
-# ────────────────────────────────────────────────────────────────────────
-# 4) File Upload Logic
-# ────────────────────────────────────────────────────────────────────────
 st.write("\n")
 uploaded_file = st.file_uploader(
     label="Upload File", 
@@ -92,6 +83,9 @@ uploaded_file = st.file_uploader(
     label_visibility="collapsed"
 )
 
+# =============================================================================
+# 4. FILE HANDLING AND PROCESSING
+# =============================================================================
 if st.button("Upload"):
     if uploaded_file is None:
         st.error("Please choose an .avi or .dcm file first.")
@@ -115,12 +109,11 @@ if st.button("Upload"):
         st.info("Running inference on video...")
         process_video(video_path)
         st.success("✅ Report generated successfully!")
-
         st.session_state["report_ready"] = True
 
-# ────────────────────────────────────────────────────────────────────────
-# 5) Show Results
-# ────────────────────────────────────────────────────────────────────────
+# =============================================================================
+# 5. SHOW RESULTS
+# =============================================================================
 if st.session_state.get("report_ready", False):
     st.header("🔍 Report Preview")
 
