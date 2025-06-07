@@ -12,3 +12,4 @@ timm
 streamlit
 pydicom
 nest_asyncio
+numpy
