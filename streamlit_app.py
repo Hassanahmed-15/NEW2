@@ -4,6 +4,10 @@ import os
 import base64
 import json
 from processing import process_dicom, process_video
+from streamlit.runtime.scriptrunner import add_script_run_ctx
+
+# Disable problematic watcher
+st.runtime.scriptrunner.has_script_run_ctx = lambda: True
 
 # ─────────────────────────────────────────────────────────────
 # 1) Page configuration
