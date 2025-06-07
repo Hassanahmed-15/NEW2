@@ -1,15 +1,12 @@
 torch==2.0.1
 torchvision==0.15.2
-open_clip_torch
-huggingface_hub
-tokenizers
-opencv-python-headless
-numpy
-matplotlib
-Pillow
-scipy
-timm
-streamlit
-pydicom
-nest_asyncio
+open_clip_torch @ git+https://github.com/mlfoundations/open_clip.git
+huggingface_hub==0.22.2
+tokenizers==0.13.3
+opencv-python-headless==4.8.0.76
+Pillow==9.5.0
+matplotlib==3.7.3
 numpy==1.24.4
+pydicom==2.4.3
+nest_asyncio==1.5.8
+streamlit
