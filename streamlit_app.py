@@ -7,14 +7,14 @@ import logging
 from functools import wraps
 
 # =============================================================================
-# 0. CRITICAL RUNTIME CONFIGURATION (MUST COME FIRST)
+# 0. CRITICAL RUNTIME CONFIGURATION
 # =============================================================================
-# Configure environment variables before any other imports
 os.environ["STREAMLIT_SERVER_HEADLESS"] = "1"
 os.environ["STREAMLIT_SERVER_ENABLE_STATIC_FILE_WATCHER"] = "false"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["CUDA_VISIBLE_DEVICES"] = ""  # Force CPU-only mode
-os.environ["STREAMLIT_SERVER_MAX_UPLOAD_SIZE"] = "1000"  # 1000MB max upload
+os.environ["CUDA_VISIBLE_DEVICES"] = ""  # Force CPU-only
+os.environ["STREAMLIT_SERVER_MAX_UPLOAD_SIZE"] = "500"  # 500MB max upload
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"  # Disable huggingface warnings
 
 # Configure logging
 logging.basicConfig(
@@ -40,10 +40,22 @@ def catch_errors(func):
     return wrapper
 
 # =============================================================================
-# 1. IMPORT STREAMLIT AND PROCESSING FUNCTIONS
+# 1. IMPORT STREAMLIT WITH MEMORY MANAGEMENT
 # =============================================================================
 import streamlit as st
-from processing import process_dicom, process_video
+import psutil
+
+# Initialize model cache at startup
+MODEL_CACHE = {}
+
+@catch_errors
+def load_model_once():
+    """Load the model once and cache it"""
+    if "model" not in MODEL_CACHE:
+        logger.info("Loading model for the first time...")
+        from processing import initialize_model
+        MODEL_CACHE["model"] = initialize_model()
+    return MODEL_CACHE["model"]
 
 # =============================================================================
 # 2. PAGE CONFIGURATION
@@ -123,7 +135,7 @@ def setup_upload_card():
 setup_upload_card()
 
 # =============================================================================
-# 5. FILE UPLOAD AND PROCESSING
+# 5. FILE UPLOAD AND PROCESSING WITH MEMORY CHECKS
 # =============================================================================
 @catch_errors
 def handle_file_processing():
@@ -137,6 +149,13 @@ def handle_file_processing():
     if st.button("Upload", key="upload_button"):
         if uploaded_file is None:
             st.error("Please choose an .avi or .dcm file first.")
+            return
+
+        # Check available memory before processing
+        mem = psutil.virtual_memory()
+        if mem.available < 1 * 1024 * 1024 * 1024:  # 1GB threshold
+            st.error("Insufficient memory available for processing")
+            logger.error(f"Low memory: {mem.available/(1024**3):.1f}GB available")
             return
 
         # Use tempfile for cloud environments
@@ -153,11 +172,14 @@ def handle_file_processing():
                 video_path = os.path.join(tempfile.gettempdir(), "converted_video.avi")
                 with st.spinner("Converting DICOM to AVI..."):
                     logger.info("Starting DICOM conversion")
+                    from processing import process_dicom
                     process_dicom(temp_path, video_path)
 
             with st.spinner("Running inference on video..."):
                 logger.info("Starting video analysis")
-                process_video(video_path)
+                model = load_model_once()
+                from processing import process_video_with_model
+                process_video_with_model(video_path, model)
                 st.success("✅ Report generated successfully!")
                 st.session_state["report_ready"] = True
 
@@ -166,13 +188,13 @@ def handle_file_processing():
             logger.error(f"Processing error: {str(e)}")
         finally:
             # Clean up temporary files
-            for f in [temp_path, video_path]:
-                try:
-                    if f and os.path.exists(f):
+            for f in [temp_path, video_path if 'video_path' in locals() else None]:
+                if f and os.path.exists(f):
+                    try:
                         os.remove(f)
                         logger.info(f"Cleaned up temporary file: {f}")
-                except Exception as e:
-                    logger.warning(f"Could not remove {f}: {str(e)}")
+                    except Exception as e:
+                        logger.warning(f"Could not remove {f}: {str(e)}")
 
 handle_file_processing()
 
@@ -222,7 +244,7 @@ def display_results():
 display_results()
 
 # =============================================================================
-# 7. DEBUG UTILITIES (OPTIONAL)
+# 7. DEBUG UTILITIES
 # =============================================================================
 if st.secrets.get("DEBUG", False):
     st.sidebar.title("Debug Info")
@@ -234,6 +256,7 @@ if st.secrets.get("DEBUG", False):
         else:
             st.sidebar.warning("No log file found")
     
-    import psutil
     st.sidebar.write("Memory Info:", psutil.virtual_memory())
     st.sidebar.write("CPU Usage:", psutil.cpu_percent())
+    if "model" in MODEL_CACHE:
+        st.sidebar.write("Model loaded successfully")
