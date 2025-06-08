@@ -94,18 +94,33 @@ def generate_report(video_embed, model):
         top_idx = scores.topk(min(n, len(prompts))).indices[0]
         return [[prompts[i], float(scores[0][i])] for i in top_idx]
     
-    def get_cont_prompt(key, values):
-        prompts = [p.replace("<#>", str(i)) for p in zero_shot_prompts[key] for i in range(values)]
-        with torch.no_grad():
-            text_embeds = F.normalize(model.encode_text(tokenize(prompts)), dim=-1)
-        pred = compute_regression_metric(video_embed, text_embeds, list(range(values)))
+    def get_cont_prompt(key, max_value):
+        """Safe continuous prompt generation with boundary checks"""
+        # Generate all possible prompt variations
+        base_prompts = zero_shot_prompts[key]
+        all_prompts = []
+        all_values = []
+        for prompt in base_prompts:
+            for val in range(max_value + 1):
+                all_prompts.append(prompt.replace("<#>", str(val)))
+                all_values.append(val)
         
-        # Clamp the predicted value to valid range
-        pred_value = torch.clamp(pred, 0, values-1).round().int().item()
+        # Get embeddings for all prompts
+        with torch.no_grad():
+            text_embeds = F.normalize(model.encode_text(tokenize(all_prompts)), dim=-1)
+        
+        # Predict value
+        pred_value = compute_regression_metric(video_embed, text_embeds, all_values)
+        
+        # Ensure value is within bounds
+        clamped_value = int(torch.clamp(pred_value, 0, max_value).round().item())
+        
+        # Find closest prompt that was actually generated
+        closest_prompt = base_prompts[0].replace("<#>", str(clamped_value))
         
         return {
-            "predicted_value": float(pred_value),
-            "closest_prompt": zero_shot_prompts[key][0].replace("<#>", str(pred_value))
+            "predicted_value": float(clamped_value),
+            "closest_prompt": closest_prompt
         }
     
     binary_conds = [
@@ -133,6 +148,6 @@ def generate_report(video_embed, model):
         "sig_elev_ra_pressure": get_top_prompts("significantly_elevated_right_atrial_pressure", 1),
         "norm_r_atrial_pressure": get_top_prompts("normal_right_atrial_pressure", 1),
         "detected_conditions": detected,
-        "ejection_fraction": get_cont_prompt('ejection_fraction', 101),  # 0-100 range
-        "pulmonary_artery_pressure": get_cont_prompt('pulmonary_artery_pressure', 17)  # 0-16 range
+        "ejection_fraction": get_cont_prompt('ejection_fraction', 100),  # 0-100 range
+        "pulmonary_artery_pressure": get_cont_prompt('pulmonary_artery_pressure', 16)  # 0-16 range
     }
