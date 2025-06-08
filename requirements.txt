@@ -10,3 +10,4 @@ numpy==1.24.4
 pydicom==2.4.3
 nest_asyncio==1.5.8
 streamlit
+psutil                                                           
