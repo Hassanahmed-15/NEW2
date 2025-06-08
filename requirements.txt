@@ -1,5 +1,5 @@
-torch==2.0.1
-torchvision==0.15.2
+torch==2.0.1+cpu
+torchvision==0.15.2+cpu
 open_clip_torch @ git+https://github.com/mlfoundations/open_clip.git
 huggingface_hub==0.22.2
 tokenizers==0.13.3
