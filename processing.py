@@ -25,7 +25,6 @@ _MODEL = None
 _PREPROCESS = None
 
 def get_model():
-    """Initialize and cache the model once"""
     global _MODEL, _PREPROCESS
     if _MODEL is None:
         logger.info("Initializing model...")
@@ -37,17 +36,14 @@ def get_model():
     return _MODEL, _PREPROCESS
 
 def process_dicom(dicom_path, output_video_path):
-    """Process DICOM file to AVI"""
     try:
         logger.info(f"Processing DICOM: {dicom_path}")
         dicom_data = pydicom.dcmread(dicom_path)
         
-        # Extract frames
         n_frames = int(dicom_data.get("NumberOfFrames", 1))
         pixel_data = dicom_data.pixel_array[:, 110:-40, 150:-150, :]
         fps = 1000 / float(dicom_data.get("FrameTime", 40))
         
-        # Initialize video writer
         writer = cv2.VideoWriter(
             output_video_path,
             cv2.VideoWriter_fourcc(*"MJPG"),
@@ -55,7 +51,6 @@ def process_dicom(dicom_path, output_video_path):
             (224, 224)
         )
         
-        # Process frames
         for i in range(n_frames if n_frames > 1 else 1):
             frame = pixel_data[i] if n_frames > 1 else pixel_data
             frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR if len(frame.shape) == 2 else cv2.COLOR_RGB2BGR)
@@ -69,24 +64,19 @@ def process_dicom(dicom_path, output_video_path):
         raise
 
 def process_video(video_path):
-    """Main video processing function"""
     try:
         logger.info(f"Processing video: {video_path}")
         model, preprocess = get_model()
         
-        # Read and preprocess video
         frames = read_avi(video_path, (224, 224))
-        frames = frames[0:min(40, len(frames)):2]  # Sample frames
+        frames = frames[0:min(40, len(frames)):2]
         frames = torch.stack([preprocess(T.ToPILImage()(f)) for f in frames]).float()
         
-        # Generate embeddings
         with torch.no_grad():
             video_embed = F.normalize(model.encode_image(frames), dim=-1).unsqueeze(0)
         
-        # Generate report
-        report = generate_report(video_embed)
+        report = generate_report(video_embed, model)
         
-        # Save results
         with open("report_data.json", "w") as f:
             json.dump(report, f)
         logger.info("Report generated successfully")
@@ -95,10 +85,7 @@ def process_video(video_path):
         logger.error(f"Video processing failed: {str(e)}")
         raise
 
-def generate_report(video_embed):
-    """Generate report from video embeddings"""
-    model, _ = get_model()
-    
+def generate_report(video_embed, model):
     def get_top_prompts(key, n=3):
         prompts = zero_shot_prompts[key]
         with torch.no_grad():
@@ -112,13 +99,15 @@ def generate_report(video_embed):
         with torch.no_grad():
             text_embeds = F.normalize(model.encode_text(tokenize(prompts)), dim=-1)
         pred = compute_regression_metric(video_embed, text_embeds, list(range(values)))
-        closest = (torch.abs(torch.arange(values) - pred.item())).argmin()
+        
+        # Clamp the predicted value to valid range
+        pred_value = torch.clamp(pred, 0, values-1).round().int().item()
+        
         return {
-            "predicted_value": float(pred.item()),
-            "closest_prompt": zero_shot_prompts[key][0].replace("<#>", str(closest.item()))
+            "predicted_value": float(pred_value),
+            "closest_prompt": zero_shot_prompts[key][0].replace("<#>", str(pred_value))
         }
     
-    # Binary conditions check
     binary_conds = [
         "severe_right_ventricle_size", "moderate_right_ventricle_size", 
         "mild_right_ventricle_size", "severe_left_atrium_size",
@@ -144,6 +133,6 @@ def generate_report(video_embed):
         "sig_elev_ra_pressure": get_top_prompts("significantly_elevated_right_atrial_pressure", 1),
         "norm_r_atrial_pressure": get_top_prompts("normal_right_atrial_pressure", 1),
         "detected_conditions": detected,
-        "ejection_fraction": get_cont_prompt('ejection_fraction', 101),
-        "pulmonary_artery_pressure": get_cont_prompt('pulmonary_artery_pressure', 17)
+        "ejection_fraction": get_cont_prompt('ejection_fraction', 101),  # 0-100 range
+        "pulmonary_artery_pressure": get_cont_prompt('pulmonary_artery_pressure', 17)  # 0-16 range
     }
